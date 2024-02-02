@@ -1,8 +1,6 @@
 {
-  "builds": [
-    {
-      "src": "npm run build",
-      "use": "@vercel/node"
-    }
+  "version": 2,
+  "routes": [
+    { "handle": "filesystem" }
   ]
 }
