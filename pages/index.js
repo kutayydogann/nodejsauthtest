@@ -5,15 +5,18 @@ import Link from 'next/link';
 import cookie from 'js-cookie';
 
 function Home() {
-  const {data, revalidate} = useSWR('/api/me', async function(args) {
+  const { data, revalidate } = useSWR('/api/me', async function (args) {
     const res = await fetch(args);
     return res.json();
   });
+
   if (!data) return <h1>Yükleniyor...</h1>;
+
   let loggedIn = false;
   if (data.email) {
     loggedIn = true;
   }
+
   return (
     <div>
       <Head>
@@ -24,7 +27,7 @@ function Home() {
 
       {loggedIn && (
         <>
-          <p>Hoşgeldin {data.email}!</p>
+          <p>Hoşgeldin {data.username || data.email}!</p>
           <button
             onClick={() => {
               cookie.remove('token');
