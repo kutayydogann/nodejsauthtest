@@ -58,7 +58,7 @@ export default (req, res) => {
                 {userId: user.userId, email: user.email},
                 jwtSecret,
                 {
-                  expiresIn: 3600, //60 Dakika
+                  expiresIn: 3600, // 60 Dakika
                 },
               );
               res.status(200).json({token});
