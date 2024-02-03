@@ -17,26 +17,37 @@ export default async (req, res) => {
         decoded = jwt.verify(token, jwtSecret);
       } catch (e) {
         console.error(e);
+        res.status(401).json({ message: 'Unable to auth' });
+        return;
       }
     }
 
     if (decoded) {
-      // Veritabanından kullanıcı adını çek
-      const client = new MongoClient('mongodb+srv://kutayydogann:81830311Kd@cargopanel.h8rlroc.mongodb.net/?retryWrites=true&w=majority');
-      await client.connect();
+      // MongoDB bağlantısı
+      const client = new MongoClient('mongodb+srv://kutayydogann:81830311Kd@cargopanel.h8rlroc.mongodb.net/?retryWrites=true&w=majority', {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
 
-      const db = client.db('cargopanel');
-      const usersCollection = db.collection('users');
+      try {
+        await client.connect();
 
-      const user = await usersCollection.findOne({ email: decoded.email });
+        const db = client.db('cargopanel');
+        const usersCollection = db.collection('users');
 
-      if (user) {
-        res.json({ email: user.email, username: user.username });
-      } else {
-        res.status(404).json({});
+        const user = await usersCollection.findOne({ email: decoded.email });
+
+        if (user) {
+          res.json({ email: user.email, username: user.username });
+        } else {
+          res.status(404).json({});
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ error: true, message: 'Internal Server Error' });
+      } finally {
+        await client.close();
       }
-
-      await client.close();
       return;
     } else {
       res.status(401).json({ message: 'Unable to auth' });
