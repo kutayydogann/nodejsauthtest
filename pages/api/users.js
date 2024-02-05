@@ -1,5 +1,4 @@
 import { MongoClient } from 'mongodb';
-import assert from 'assert';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
@@ -10,103 +9,84 @@ const jwtSecret = 'SUPERSECRETE20220';
 const url = 'mongodb+srv://kutayydogann:81830311Kd@cargopanel.h8rlroc.mongodb.net/?retryWrites=true&w=majority';
 const dbName = 'cargopanel';
 
-const client = new MongoClient(url, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+let client;
 
-function findUser(db, email, callback) {
-  const collection = db.collection('users');
-  collection.findOne({ email }, callback);
+async function connectToDatabase() {
+  if (!client) {
+    client = new MongoClient(url);
+    await client.connect();
+  }
+  return client.db(dbName);
 }
 
-function createUser(db, email, password, username, companyname, phone, callback) {
-  const collection = db.collection('users');
-  bcrypt.hash(password, saltRounds, function (err, hash) {
-    if (err) {
-      callback(err, null);
-      return;
-    }
-    // Store hash in your password DB.
-    collection.insertOne(
-      {
-        userId: uuidv4(),
-        email,
-        password: hash,
-        username,
-        companyname,
-        phone,
-      },
-      function (err, userCreated) {
-        assert.equal(err, null);
-        callback(null, userCreated);
-      },
-    );
+function findUser(collection, email) {
+  return collection.findOne({ email });
+}
+
+async function createUser(collection, email, password, username, companyname, phone) {
+  const hash = await bcrypt.hash(password, saltRounds);
+  const currentDate = new Date();
+  const formattedDate = currentDate.toLocaleString('tr-TR', {
+    timeZone: 'Europe/Istanbul',
+    dateStyle: 'long',
+    timeStyle: 'long',
   });
-}
 
-export default (req, res) => {
-  if (req.method === 'POST') {
-    // signup
-    try {
-      assert.notEqual(null, req.body.email, 'Email required');
-      assert.notEqual(null, req.body.password, 'Password required');
-      assert.notEqual(null, req.body.username, 'Username required');
-      assert.notEqual(null, req.body.companyname, 'Companyname required');
-      assert.notEqual(null, req.body.phone, 'Phone required');
-    } catch (bodyError) {
-      res.status(403).json({ error: true, message: bodyError.message });
-      return;
+  try {
+    const result = await collection.insertOne({
+      userId: uuidv4(),
+      email,
+      password: hash,
+      username,
+      companyname,
+      phone,
+      registrationDate: formattedDate,
+      lastLoginDate: null,
+    });
+
+    if (result && result.insertedId) {
+      const insertedUser = await collection.findOne({ _id: result.insertedId });
+      return insertedUser;
     }
 
-    // verify email does not exist already
-    client.connect(function (err) {
-      if (err) {
-        res.status(500).json({ error: true, message: 'Error connecting to MongoDB' });
-        return;
-      }
-      console.log('Connected to MongoDB server =>');
-      const db = client.db(dbName);
-      const email = req.body.email;
-      const password = req.body.password;
-      const username = req.body.username;
-      const companyname = req.body.companyname;
-      const phone = req.body.phone;
+    throw new Error('Hesap oluşturma başarısız!');
+  } catch (error) {
+    console.error('Hesap oluşturulurken beklenmeyen hata:', error);
+    throw new Error('Hesap oluşturma başarısız!');
+  }
+}
 
-      findUser(db, email, function (err, user) {
-        if (err) {
-          res.status(500).json({ error: true, message: 'Error finding User' });
-          return;
-        }
-        if (!user) {
-          // proceed to Create
-          createUser(db, email, password, username, companyname, phone, function (err, creationResult) {
-            if (err) {
-              res.status(500).json({ error: true, message: 'Error creating User' });
-              return;
-            }
-            if (creationResult.ops.length === 1) {
-              const user = creationResult.ops[0];
-              const token = jwt.sign(
-                { userId: user.userId, email: user.email, username, companyname, phone },
-                jwtSecret,
-                {
-                  expiresIn: 3600, // 60 Dakika
-                },
-              );
-              res.status(200).json({ token });
-              return;
-            }
-          });
-        } else {
-          // User exists
-          res.status(403).json({ error: true, message: 'Email exists' });
-          return;
-        }
-      });
-    });
+export default async (req, res) => {
+  if (req.method === 'POST') {
+    try {
+      if (!req.body.email || !req.body.password || !req.body.username || !req.body.companyname || !req.body.phone) {
+        throw new Error('Tüm alanlar gereklidir!');
+      }
+
+      const db = await connectToDatabase();
+      const collection = db.collection('users');
+      const email = req.body.email;
+
+      const user = await findUser(collection, email);
+
+      if (!user) {
+        const createdUser = await createUser(collection, req.body.email, req.body.password, req.body.username, req.body.companyname, req.body.phone);
+
+        const token = jwt.sign(
+          { userId: createdUser.userId, email: createdUser.email, username: createdUser.username, companyname: createdUser.companyname, phone: createdUser.phone },
+          jwtSecret,
+          { expiresIn: 3600 },
+        );
+
+        res.status(200).json({ token });
+      } else {
+        res.status(403).json({ error: true, message: 'Bu e-posta kayıtlıdır!' });
+      }
+    } catch (error) {
+      console.error('Kayıt sırasında hata oluştu:', error);
+      res.status(500).json({ error: true, message: 'Hesap oluşturma başarısız!' });
+    }
   } else {
-    // Handle any other HTTP method
     res.status(200).json({ users: ['Kutay Doğan'] });
   }
 };

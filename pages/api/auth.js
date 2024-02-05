@@ -1,79 +1,87 @@
-const MongoClient = require('mongodb').MongoClient;
-const assert = require('assert');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const jwtSecret = 'SUPERSECRETE20220';
+import { MongoClient } from 'mongodb';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
+const jwtSecret = 'SUPERSECRETE20220';
 const saltRounds = 10;
 const url = 'mongodb+srv://kutayydogann:81830311Kd@cargopanel.h8rlroc.mongodb.net/?retryWrites=true&w=majority';
 const dbName = 'cargopanel';
 
-const client = new MongoClient(url, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const client = new MongoClient(url);
 
-function findUser(db, email, callback) {
+function findUser(db, email) {
   const collection = db.collection('users');
-  collection.findOne({email}, callback);
+  return collection.findOne({ email });
 }
 
-function authUser(db, email, password, hash, callback) {
-  const collection = db.collection('users');
-  bcrypt.compare(password, hash, callback);
+async function authUser(db, email, password, user) {
+  const match = await bcrypt.compare(password, user.password);
+
+  if (match) {
+    // Kullanıcının giriş yaptığı tarih ve zamanı alıyoruz
+    const currentLoginDate = new Date();
+
+    const formattedLoginDate = currentLoginDate.toLocaleString('tr-TR', {
+      timeZone: 'Europe/Istanbul',
+      dateStyle: 'long',
+      timeStyle: 'long',
+    });
+
+    // Kullanıcının bilgilerini güncelliyoruz
+    await db.collection('users').updateOne(
+      { email: email },
+      { $set: { lastLoginDate: formattedLoginDate } }
+    );
+
+    return true;
+  }
+
+  return false;
 }
 
-export default (req, res) => {
+export default async (req, res) => {
   if (req.method === 'POST') {
-    //login
-    try {
-      assert.notEqual(null, req.body.email, 'E-Posta Girilmesi Zorunludur');
-      assert.notEqual(null, req.body.password, 'Şifre Girilmesi Zorunludur');
-    } catch (bodyError) {
-      res.status(403).send(bodyError.message);
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(403).json({ error: true, message: 'E-Posta ve Şifre girilmesi zorunludur!' });
+      return;
     }
 
-    client.connect(function(err) {
-      assert.equal(null, err);
+    try {
+      await client.connect();
       console.log('Connected to MongoDB server =>');
       const db = client.db(dbName);
-      const email = req.body.email;
-      const password = req.body.password;
 
-      findUser(db, email, function(err, user) {
-        if (err) {
-          res.status(500).json({error: true, message: 'Error finding User'});
-          return;
-        }
-        if (!user) {
-          res.status(404).json({error: true, message: 'Kullanıcı Bulunamadı'});
-          return;
-        } else {
-          authUser(db, email, password, user.password, function(err, match) {
-            if (err) {
-              res.status(500).json({error: true, message: 'Auth Failed'});
-            }
-            if (match) {
-              const token = jwt.sign(
-                {userId: user.userId, email: user.email},
-                jwtSecret,
-                {
-                  expiresIn: 3600, // 60 Dakika
-                },
-              );
-              res.status(200).json({token});
-              return;
-            } else {
-              res.status(401).json({error: true, message: 'Auth Failed'});
-              return;
-            }
-          });
-        }
-      });
-    });
+      const user = await findUser(db, email);
+
+      if (!user) {
+        res.status(404).json({ error: true, message: 'Kullanıcı Bulunamadı' });
+        return;
+      }
+
+      const authenticationResult = await authUser(db, email, password, user);
+
+      if (authenticationResult) {
+        const token = jwt.sign(
+          { userId: user.userId, email: user.email },
+          jwtSecret,
+          {
+            expiresIn: 3600, // 60 Dakika
+          },
+        );
+        res.status(200).json({ token });
+        return;
+      } else {
+        res.status(401).json({ error: true, message: 'Auth Failed' });
+        return;
+      }
+    } catch (err) {
+      res.status(500).json({ error: true, message: 'Server Error' });
+    } finally {
+      await client.close();
+    }
   } else {
-    // Handle any other HTTP method
-    res.statusCode = 401;
-    res.end();
+    res.status(401).end();
   }
 };

@@ -24,10 +24,7 @@ export default async (req, res) => {
 
     if (decoded) {
       // MongoDB bağlantısı
-      const client = new MongoClient('mongodb+srv://kutayydogann:81830311Kd@cargopanel.h8rlroc.mongodb.net/?retryWrites=true&w=majority', {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
+      const client = new MongoClient('mongodb+srv://kutayydogann:81830311Kd@cargopanel.h8rlroc.mongodb.net/?retryWrites=true&w=majority');
 
       try {
         await client.connect();

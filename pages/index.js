@@ -1,11 +1,11 @@
 import Head from 'next/head';
 import fetch from 'isomorphic-unfetch';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import Link from 'next/link';
 import cookie from 'js-cookie';
 
 function Home() {
-  const { data, revalidate } = useSWR('/api/me', async function (args) {
+  const { data, mutate } = useSWR('/api/me', async function (args) {
     const res = await fetch(args);
     return res.json();
   });
@@ -16,6 +16,11 @@ function Home() {
   if (data.email) {
     loggedIn = true;
   }
+
+  const handleLogout = () => {
+    cookie.remove('token');
+    mutate();
+  };
 
   return (
     <div>
@@ -28,19 +33,13 @@ function Home() {
       {loggedIn && (
         <>
           <p>Hoşgeldin {data.username || data.email}!</p>
-          <button
-            onClick={() => {
-              cookie.remove('token');
-              revalidate();
-            }}>
-            Çıkış Yap
-          </button>
+          <button onClick={handleLogout}>Çıkış Yap</button>
         </>
       )}
       {!loggedIn && (
         <>
           <Link href="/login">Giriş Yap</Link>
-          <p>veya</p>
+          <span> veya </span>
           <Link href="/signup">Kayıt Ol</Link>
         </>
       )}

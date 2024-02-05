@@ -1,18 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Router from 'next/router';
 import cookie from 'js-cookie';
 
 const Signup = () => {
   const [signupError, setSignupError] = useState('');
-  const [username, setUsername] = useState('');  // Eklenen satır
-  const [companyname, setCompanyname] = useState('');  // Eklenen satır
-  const [phone, setPhone] = useState('');  // Eklenen satır
+  const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState('');
+  const [companyname, setCompanyname] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+
+  useEffect(() => {
+    // Kullanıcı zaten giriş yapmışsa anasayfaya yönlendir
+    const token = cookie.get('token');
+    if (token) {
+      Router.push('/');
+    }
+  }, []);
 
   function handleSubmit(e) {
     e.preventDefault();
+    setSignupError('');
+    setLoading(true);
+
     fetch('/api/users', {
       method: 'POST',
       headers: {
@@ -28,16 +39,23 @@ const Signup = () => {
     })
       .then((r) => r.json())
       .then((data) => {
+        setLoading(false);
+
         if (data && data.error) {
           setSignupError(data.message);
         }
         if (data && data.token) {
-          //set cookie
-          cookie.set('token', data.token, {expires: 2});
+          cookie.set('token', data.token, { expires: 2 });
           Router.push('/');
         }
+      })
+      .catch((error) => {
+        setLoading(false);
+        setSignupError('Bir hata oluştu. Lütfen tekrar deneyin.');
+        console.error('Fetch hatası:', error);
       });
   }
+
   return (
     <form onSubmit={handleSubmit}>
       <h3>Hesap Oluştur</h3>
@@ -87,8 +105,9 @@ const Signup = () => {
 
       <br /><br />
 
-      <input type="submit" value="Kayıt Ol" />
-      {signupError && <p style={{color: 'red'}}>{signupError}</p>}
+      <input type="submit" value="Kayıt Ol" disabled={loading} />
+      {loading && <p>Yükleniyor...</p>}
+      {signupError && <p style={{ color: 'red' }}>{signupError}</p>}
     </form>
   );
 };

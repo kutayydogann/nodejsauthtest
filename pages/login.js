@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import Router from 'next/router';
 import cookie from 'js-cookie';
 
@@ -7,9 +7,17 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  useEffect(() => {
+    const token = cookie.get('token');
+    if (token) {
+      // Kullanıcı zaten giriş yapmışsa anasayfaya yönlendir
+      Router.push('/');
+    }
+  }, []);
+
   function handleSubmit(e) {
     e.preventDefault();
-    //call api
+    // Call API
     fetch('/api/auth', {
       method: 'POST',
       headers: {
@@ -20,20 +28,19 @@ const Login = () => {
         password,
       }),
     })
-      .then((r) => {
-        return r.json();
-      })
+      .then((r) => r.json())
       .then((data) => {
         if (data && data.error) {
           setLoginError(data.message);
         }
         if (data && data.token) {
-          //set cookie
-          cookie.set('token', data.token, {expires: 2});
+          // Set cookie
+          cookie.set('token', data.token, { expires: 2 });
           Router.push('/');
         }
       });
   }
+
   return (
     <form onSubmit={handleSubmit}>
       <h3>Giriş Yap</h3>
@@ -52,7 +59,7 @@ const Login = () => {
         placeholder="Şifre"
       />
       <input type="submit" value="Giriş Yap" />
-      {loginError && <p style={{color: 'red'}}>{loginError}</p>}
+      {loginError && <p style={{ color: 'red' }}>{loginError}</p>}
     </form>
   );
 };
