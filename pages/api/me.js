@@ -16,7 +16,6 @@ export default async (req, res) => {
       try {
         decoded = jwt.verify(token, jwtSecret);
       } catch (e) {
-        console.error(e);
         res.status(401).json({ message: 'Unable to auth' });
         return;
       }

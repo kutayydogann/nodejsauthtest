@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState} from 'react';
 import Router from 'next/router';
 import cookie from 'js-cookie';
 
@@ -7,17 +7,9 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    const token = cookie.get('token');
-    if (token) {
-      // Kullanıcı zaten giriş yapmışsa anasayfaya yönlendir
-      Router.push('/');
-    }
-  }, []);
-
   function handleSubmit(e) {
     e.preventDefault();
-    // Call API
+  
     fetch('/api/auth', {
       method: 'POST',
       headers: {
@@ -28,14 +20,15 @@ const Login = () => {
         password,
       }),
     })
-      .then((r) => r.json())
+      .then((r) => {
+        return r.json();
+      })
       .then((data) => {
         if (data && data.error) {
           setLoginError(data.message);
         }
         if (data && data.token) {
-          // Set cookie
-          cookie.set('token', data.token, { expires: 2 });
+          cookie.set('token', data.token, {expires: 2});
           Router.push('/');
         }
       });

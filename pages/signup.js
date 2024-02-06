@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Router from 'next/router';
 import cookie from 'js-cookie';
 
@@ -10,14 +10,6 @@ const Signup = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  useEffect(() => {
-    // Kullanıcı zaten giriş yapmışsa anasayfaya yönlendir
-    const token = cookie.get('token');
-    if (token) {
-      Router.push('/');
-    }
-  }, []);
 
   function handleSubmit(e) {
     e.preventDefault();
