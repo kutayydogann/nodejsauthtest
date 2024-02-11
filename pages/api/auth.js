@@ -44,7 +44,7 @@ export default async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(403).json({ error: true, message: 'E-Posta ve Şifre girilmesi zorunludur!' });
+      res.status(403).json({ error: true, message: 'E-Posta ve şifre girilmesi zorunludur!' });
       return;
     }
 
@@ -56,7 +56,7 @@ export default async (req, res) => {
       const user = await findUser(db, email);
 
       if (!user) {
-        res.status(404).json({ error: true, message: 'Kullanıcı Bulunamadı' });
+        res.status(404).json({ error: true, message: 'Kullanıcı bulunamadı' });
         return;
       }
 
@@ -73,7 +73,7 @@ export default async (req, res) => {
         res.status(200).json({ token });
         return;
       } else {
-        res.status(401).json({ error: true, message: 'Auth Failed' });
+        res.status(401).json({ error: true, message: 'E-posta veya şifre hatalı' });
         return;
       }
     } catch (err) {
