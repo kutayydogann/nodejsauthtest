@@ -34,7 +34,7 @@ export default async (req, res) => {
         const user = await usersCollection.findOne({ email: decoded.email });
 
         if (user) {
-          res.json({ email: user.email, username: user.username });
+          res.json({ email: user.email, firstName: user.firstName, lastName: user.lastName });
         } else {
           res.status(404).json({});
         }

@@ -12,10 +12,7 @@ function Home() {
 
   if (!data) return <h1>Yükleniyor...</h1>;
 
-  let loggedIn = false;
-  if (data.email) {
-    loggedIn = true;
-  }
+  const loggedIn = !!data.email;
 
   const handleLogout = () => {
     cookie.remove('token');
@@ -32,7 +29,7 @@ function Home() {
 
       {loggedIn && (
         <>
-          <p>Hoşgeldin {data.username || data.email}!</p>
+          <p>Hoşgeldin {`${data.firstName} ${data.lastName}`}!</p>
           <button onClick={handleLogout}>Çıkış Yap</button>
         </>
       )}

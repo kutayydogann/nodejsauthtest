@@ -5,8 +5,9 @@ import cookie from 'js-cookie';
 const Signup = () => {
   const [signupError, setSignupError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState('');
-  const [companyname, setCompanyname] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,8 +23,9 @@ const Signup = () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        username,
-        companyname,
+        firstName,
+        lastName,
+        companyName,
         phone,
         email,
         password,
@@ -51,20 +53,29 @@ const Signup = () => {
   return (
     <form onSubmit={handleSubmit}>
       <h3>Hesap Oluştur</h3>
-      <label htmlFor="username">Ad Soyad</label>
+      <label htmlFor="firstName">Ad</label>
       <input
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        name="username"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+        name="firstName"
         type="text"
         required
       />
 
-      <label htmlFor="companyname">Şirket Adı (Opsiyonel)</label>
+      <label htmlFor="lastName">Soyad</label>
       <input
-        value={companyname}
-        onChange={(e) => setCompanyname(e.target.value)}
-        name="companyname"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        name="lastName"
+        type="text"
+        required
+      />
+
+      <label htmlFor="companyName">Şirket Adı (Opsiyonel)</label>
+      <input
+        value={companyName}
+        onChange={(e) => setCompanyName(e.target.value)}
+        name="companyName"
         type="text"
       />
 

@@ -23,7 +23,7 @@ function findUser(collection, email) {
   return collection.findOne({ email });
 }
 
-async function createUser(collection, email, password, username, companyname, phone) {
+async function createUser(collection, email, password, firstName, lastName, companyName, phone) {
   const hash = await bcrypt.hash(password, saltRounds);
   const currentDate = new Date();
   const formattedDate = currentDate.toLocaleString('tr-TR', {
@@ -37,8 +37,9 @@ async function createUser(collection, email, password, username, companyname, ph
       userId: uuidv4(),
       email,
       password: hash,
-      username,
-      companyname,
+      firstName,
+      lastName,
+      companyName,
       phone,
       registrationDate: formattedDate,
       lastLoginDate: null,
@@ -59,7 +60,7 @@ async function createUser(collection, email, password, username, companyname, ph
 export default async (req, res) => {
   if (req.method === 'POST') {
     try {
-      if (!req.body.email || !req.body.password || !req.body.username || !req.body.companyname || !req.body.phone) {
+      if (!req.body.email || !req.body.password || !req.body.firstName || !req.body.lastName || !req.body.companyName || !req.body.phone) {
         throw new Error('Tüm alanlar gereklidir!');
       }
 
@@ -70,10 +71,10 @@ export default async (req, res) => {
       const user = await findUser(collection, email);
 
       if (!user) {
-        const createdUser = await createUser(collection, req.body.email, req.body.password, req.body.username, req.body.companyname, req.body.phone);
+        const createdUser = await createUser(collection, req.body.email, req.body.password, req.body.firstName, req.body.lastName, req.body.companyName, req.body.phone);
 
         const token = jwt.sign(
-          { userId: createdUser.userId, email: createdUser.email, username: createdUser.username, companyname: createdUser.companyname, phone: createdUser.phone },
+          { userId: createdUser.userId, email: createdUser.email, firstName: createdUser.firstName, lastName: createdUser.lastName, companyName: createdUser.companyName, phone: createdUser.phone },
           jwtSecret,
           { expiresIn: 3600 },
         );
