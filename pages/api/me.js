@@ -48,7 +48,7 @@ export default async (req, res) => {
         console.error('Error fetching user:', error);
         res.status(500).json({ error: true, message: 'Internal Server Error' });
       } finally {
-        if (client.isConnected()) {
+        if (client && typeof client.isConnected === 'function' && client.isConnected()) {
           await client.close();
         }
       }
