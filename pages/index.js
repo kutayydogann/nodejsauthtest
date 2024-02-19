@@ -5,7 +5,7 @@ import Link from 'next/link';
 import cookie from 'js-cookie';
 
 function Home() {
-  const { data, mutate } = useSWR('/api/me', async function (args) {
+  const { data, mutate } = useSWR('/api/me', async (args) => {
     const res = await fetch(args);
     return res.json();
   });

@@ -2,11 +2,14 @@ import { MongoClient } from 'mongodb';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
+import { config } from 'dotenv';
+
+config();
 
 const saltRounds = 10;
-const jwtSecret = 'SUPERSECRETE20220';
+const jwtSecret = process.env.JWT_SECRET;
 
-const url = 'mongodb+srv://kutayydogann:81830311Kd@cargopanel.h8rlroc.mongodb.net/?retryWrites=true&w=majority';
+const url = process.env.MONGODB_URL;
 const dbName = 'cargopanel';
 
 let client;
@@ -79,15 +82,15 @@ export default async (req, res) => {
           { expiresIn: 3600 },
         );
 
-        res.status(200).json({ token });
+        return res.status(200).json({ token });
       } else {
-        res.status(403).json({ error: true, message: 'Bu e-posta kayıtlıdır!' });
+        return res.status(403).json({ error: true, message: 'Bu e-posta kayıtlıdır!' });
       }
     } catch (error) {
       console.error('Kayıt sırasında hata oluştu:', error);
-      res.status(500).json({ error: true, message: 'Hesap oluşturma başarısız!' });
+      return res.status(500).json({ error: true, message: 'Hesap oluşturma başarısız!' });
     }
   } else {
-    res.status(200).json({ users: ['Kutay Doğan'] });
+    return res.status(200).json({ users: ['Kutay Doğan'] });
   }
 };

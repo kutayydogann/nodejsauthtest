@@ -1,6 +1,12 @@
-const jwt = require('jsonwebtoken');
-const jwtSecret = 'SUPERSECRETE20220';
-const { MongoClient } = require('mongodb');
+import { config } from 'dotenv';
+import jwt from 'jsonwebtoken';
+import { MongoClient } from 'mongodb';
+
+config();
+
+const jwtSecret = process.env.JWT_SECRET;
+const url = process.env.MONGODB_URL;
+const dbName = process.env.MONGODB_DB_NAME || 'cargopanel';
 
 export default async (req, res) => {
   if (req.method === 'GET') {
@@ -23,12 +29,12 @@ export default async (req, res) => {
 
     if (decoded) {
       // MongoDB bağlantısı
-      const client = new MongoClient('mongodb+srv://kutayydogann:81830311Kd@cargopanel.h8rlroc.mongodb.net/?retryWrites=true&w=majority');
+      const client = new MongoClient(url);
 
       try {
         await client.connect();
 
-        const db = client.db('cargopanel');
+        const db = client.db(dbName);
         const usersCollection = db.collection('users');
 
         const user = await usersCollection.findOne({ email: decoded.email });
@@ -42,7 +48,9 @@ export default async (req, res) => {
         console.error('Error fetching user:', error);
         res.status(500).json({ error: true, message: 'Internal Server Error' });
       } finally {
-        await client.close();
+        if (client.isConnected()) {
+          await client.close();
+        }
       }
       return;
     } else {
